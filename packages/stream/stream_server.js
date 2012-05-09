@@ -79,8 +79,10 @@ _.extend(Meteor._StreamServer.prototype, {
       var oldAppListeners = app.listeners(event).slice(0);
       app.removeAllListeners(event);
 
+      // request and upgrade have different arguments passed but
+      // we only care about the first one which is always request
       var newListener = function(request /*, moreArguments */) {
-        // Store arguments for use within a closure
+        // Store arguments for use within the closure below
         var args = arguments;
 
         if (request.url === '/websocket' ||
