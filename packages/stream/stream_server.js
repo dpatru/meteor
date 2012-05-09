@@ -21,6 +21,29 @@ Meteor._StreamServer = function () {
     jsessionid: false});
   self.server.installHandlers(__meteor_bootstrap__.app);
 
+  // Redirect /websocket to /sockjs/websocket in order to not expose
+  // sockjs to clients that want to use raw websockets
+  // xcxc add comment explaining why we need to do it this way,
+  // reference https://github.com/sockjs/sockjs-node/blob/master/src/utils.coffee
+  _.each(['request', 'upgrade'], function(event) {
+    var app = __meteor_bootstrap__.app;
+    var oldAppListeners = app.listeners(event).slice(0);
+    app.removeAllListeners(event);
+    // xcxc check style guide for /*args*/
+    var newListener = function(request /*,args*/) {
+      var args = arguments;
+      console.log(request.url);
+
+      if (request.url === '/websocket') // xcxc or websocket/
+        request.url = '/sockjs/websocket';
+
+      _.each(oldAppListeners, function(oldListener) {
+        oldListener.apply(app, args);
+      });
+    };
+    app.addListener(event, newListener);
+  });
+
   self.server.on('connection', function (socket) {
     socket.send = function (data) {
       socket.write(data);
